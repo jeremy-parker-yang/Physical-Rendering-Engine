@@ -54,7 +54,7 @@ public class Vector3 {
 	}
 	
 	/**
-	 * Normalizes vector
+	 * Normalize vector
 	 */
 	Vector3 norm() {
 		return this.mul(1d/Math.sqrt(this.dot(this)));

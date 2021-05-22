@@ -1,19 +1,19 @@
 /**
- * Triangle defined as one point and two vector edges. Assumes right-handed
- * coordinate system.
+ * Triangle defined as one point and two vector edges. 
+ * Assumes a right-handed coordinate system.
  * 
  * @author Jeremy Parker Yang
  *
  */
-public class Tri {
+public class Triangle {
 	Vector3 a; // point a
 	Vector3 e1; // edge 1
 	Vector3 e2; // edge 1
 
 	// TODO: local coords
 	Vector3 n; // normal
-	Vector3 t1; // tangent 1
-	Vector3 t2; // tangent 2
+	//Vector3 t1; // tangent 1
+	//Vector3 t2; // tangent 2
 
 	/**
 	 * Construct triangle from 3 vertices
@@ -22,7 +22,7 @@ public class Tri {
 	 * @param b Cartesian coords vertex b
 	 * @param c Cartesian coords vertex c
 	 */
-	public Tri(Vector3 a, Vector3 b, Vector3 c) {
+	public Triangle(Vector3 a, Vector3 b, Vector3 c) {
 		// defines triangle
 		this.a = a;
 		e1 = b.sub(a);
@@ -45,9 +45,9 @@ public class Tri {
 	public boolean MTint(Vector3 o, Vector3 d, Vector3 hit) {
 
 		// back facing triangles do not intersect
-		if (d.dot(n) < 0)
+		if (d.dot(n) > 0)
 			return false;
-
+		
 		Vector3 t = o.sub(a);
 		Vector3 p = d.cross(e2);
 		Vector3 q = t.cross(e1);
@@ -65,7 +65,7 @@ public class Tri {
 		if (v < 0 || u + v > 1)
 			return false;
 
-		// calc point of intersection
+		// get point of intersection
 		hit = o.add(d.mul(k * q.dot(e2)));
 
 		return true;
