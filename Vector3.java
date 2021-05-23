@@ -5,9 +5,9 @@
  *
  */
 public class Vector3 {
-	private final double x;
-	private final double y;
-	private final double z;
+	private double x;
+	private double y;
+	private double z;
 
 	/**
 	 * Construct vector
@@ -19,12 +19,42 @@ public class Vector3 {
 	}
 
 	/**
+	 * Set as a copy of vector a
+	 */
+	public void set(Vector3 a) {
+		this.x = a.x;
+		this.y = a.y;
+		this.z = a.z;
+	}
+
+	/**
+	 * Gets x component
+	 */
+	public double getX() {
+		return this.x;
+	}
+	
+	/**
+	 * Gets y component
+	 */
+	public double getY() {
+		return this.y;
+	}
+	
+	/**
+	 * Gets z component
+	 */
+	public double getZ() {
+		return this.z;
+	}
+
+	/**
 	 * Vector addition
 	 */
 	Vector3 add(Vector3 a) {
 		return new Vector3(this.x + a.x, this.y + a.y, this.z + a.z);
 	}
-	
+
 	/**
 	 * Vector subtraction
 	 */
@@ -52,11 +82,11 @@ public class Vector3 {
 	Vector3 cross(Vector3 a) {
 		return new Vector3(this.y * a.z - this.z * a.y, this.z * a.x - this.x * a.z, this.x * a.y - this.y * a.x);
 	}
-	
+
 	/**
 	 * Normalize vector
 	 */
 	Vector3 norm() {
-		return this.mul(1d/Math.sqrt(this.dot(this)));
+		return this.mul(1d / Math.sqrt(this.dot(this)));
 	}
 }

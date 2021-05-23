@@ -1,6 +1,6 @@
 /**
- * Triangle defined as one point and two vector edges. 
- * Assumes a right-handed coordinate system.
+ * Triangle defined as one point and two vector edges. Assumes a right-handed
+ * coordinate system.
  * 
  * @author Jeremy Parker Yang
  *
@@ -12,8 +12,8 @@ public class Triangle {
 
 	// TODO: local coords
 	Vector3 n; // normal
-	//Vector3 t1; // tangent 1
-	//Vector3 t2; // tangent 2
+	// Vector3 t1; // tangent 1
+	// Vector3 t2; // tangent 2
 
 	/**
 	 * Construct triangle from 3 vertices
@@ -41,13 +41,14 @@ public class Triangle {
 	 * @param d direction of ray
 	 * @return true if there is a hit
 	 * @return hit point of intersection
+	 * @return tuv Barycentric coords of intersection
 	 */
-	public boolean MTint(Vector3 o, Vector3 d, Vector3 hit) {
+	public boolean MTint(Vector3 o, Vector3 d, Vector3 hit, Vector3 tuv) {
 
 		// back facing triangles do not intersect
 		if (d.dot(n) > 0)
 			return false;
-		
+
 		Vector3 t = o.sub(a);
 		Vector3 p = d.cross(e2);
 		Vector3 q = t.cross(e1);
@@ -66,7 +67,8 @@ public class Triangle {
 			return false;
 
 		// get point of intersection
-		hit = o.add(d.mul(k * q.dot(e2)));
+		tuv.set(new Vector3(k * q.dot(e2), u, v));
+		hit.set(o.add(d.mul(tuv.getX())));
 
 		return true;
 	}
