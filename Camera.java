@@ -1,11 +1,14 @@
 import java.awt.*;
 import java.awt.image.*;
+import java.util.ArrayList;
+
 import javax.swing.*;
 
 /**
  * Generates image from camera
  * 
  * @author Jeremy Parker Yang
+ * @author Joshua Hopwood
  *
  */
 public class Camera {
@@ -16,30 +19,103 @@ public class Camera {
 	final static double FOV = 0.69;
 
 	// camera position
-	static Vector3 camLoc = new Vector3(0, 0, 7);
+	static Vector3 camLoc = new Vector3(0, 0, 5);
 	// TODO static Vector3 camRot = new Vector3();
 
-	// display image
-	private static JFrame frame;
-	private static BufferedImage image;
-	private static DataBuffer data;
-	private static JPanel panel;
-
-	// object test
-	private static TriMesh obj = new TriMesh("Icosahedron.obj");
+	// scene info
+	private static ArrayList<TriMesh> scene = new ArrayList<TriMesh>();
 
 	/**
 	 * Load meshes, generate final image
 	 */
 	public static void main(String[] args) {
-
 		// load meshes
+		TriMesh ico = new TriMesh("icosahedron.obj");
+		scene.add(ico);
+
+		// render
 		render();
+	}
+
+	/**
+	 * Calculate color for each pixel
+	 */
+	public static void render() {
+
+		// start image display
+		imageSetup();
+
+		// calculate value for each pixel
+		double step = 2 * Math.tan(FOV) / WIDTH;
+		Vector3 camRay;
+		Vector3 hit = new Vector3(0, 0, 0);
+		Vector3 tuv = new Vector3(0, 0, 0);
+		Vector3 n = new Vector3(0, 0, 0);
+		int color = 0;
+
+		// loop through pixels
+		for (int j = 0; j < HEIGHT; j++) {
+			for (int i = 0; i < WIDTH; i++) {
+
+				camRay = new Vector3(step * (i - (WIDTH / 2)), step * ((HEIGHT / 2) - j), -1).norm();
+
+				// color test
+				if (step * (i - (WIDTH / 2)) > 0) {
+					if (step * ((HEIGHT / 2) - j) > 0) {
+						// (+,+)
+						set(i, j, 255, 255, 100);
+					} else {
+						// (+,-)
+						set(i, j, 255, 100, 100);
+					}
+				} else {
+					if (step * ((HEIGHT / 2) - j) > 0) {
+						// (-,+)
+						set(i, j, 100, 255, 100);
+					} else {
+						// (-,-)
+						set(i, j, 100, 100, 255);
+					}
+				}
+
+				// check intersection
+				for (int k = 0; k < scene.size(); k++) {
+					if (scene.get(k).intersect(camLoc, camRay, hit, tuv, n)) {
+						color = (int) Math.round(camRay.mul(-1).dot(n) * 255);
+						// System.out.println(color);
+						set(i, j, color, color, color);
+					}
+				}
+
+				panel.repaint();
+			}
+		}
 
 	}
 
-	public static void render() {
+	// data to display image
+	private static JFrame frame;
+	private static BufferedImage image;
+	private static DataBuffer data;
+	private static JPanel panel;
 
+	/**
+	 * Sets the color of one pixel
+	 * 
+	 * @param x position of pixel
+	 * @param y position of pixel
+	 * @param r red value [0,255]
+	 * @param g green value [0,255]
+	 * @param b blue value [0,255]
+	 */
+	private static void set(int x, int y, int r, int g, int b) {
+		data.setElem(x + y * WIDTH, r << 16 | g << 8 | b);
+	}
+
+	/**
+	 * Sets up image to display
+	 */
+	public static void imageSetup() {
 		// create frame to display image
 		frame = new JFrame("path tracer");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -64,65 +140,6 @@ public class Camera {
 		for (int y = 0; y < HEIGHT; y++)
 			for (int x = 0; x < WIDTH; x++)
 				data.setElem(x + y * WIDTH, 0x00000000);
-		panel.repaint();
-
-		// calculate value for each pixel
-		double step = 2 * Math.tan(FOV) / WIDTH;
-		Vector3 camRay;
-		Vector3 hit = new Vector3(0,0,0);
-		Vector3 tuv = new Vector3(0,0,0);
-		Vector3 n = new Vector3(0,0,0);
-		int color = 0;
-
-		for (int j = 0; j < HEIGHT; j++) {
-			for (int i = 0; i < WIDTH; i++) {
-
-				camRay = new Vector3(step * (i - (WIDTH / 2)), step * ((HEIGHT / 2) - j), -1);
-				camRay = camRay.norm();
-
-				// color test
-				if (step * (i - (WIDTH / 2)) > 0) {
-					if (step * ((HEIGHT / 2) - j) > 0) {
-						// (+,+)
-						set(i, j, 255, 255, 100);
-					} else {
-						// (+,-)
-						set(i, j, 255, 100, 100);
-					}
-				} else {
-					if (step * ((HEIGHT / 2) - j) > 0) {
-						// (-,+)
-						set(i, j, 100, 255, 100);
-					} else {
-						// (-,-)
-						set(i, j, 100, 100, 255);
-					}
-				}
-
-				// check intersection
-				if (obj.intersect(camLoc, camRay, hit, tuv, n)) {
-					color = (int) Math.round(camRay.mul(-1).dot(n) * 255);
-					//System.out.println(color);
-					set(i, j, color, color, color);
-				}
-
-				panel.repaint();
-			}
-		}
-
-	}
-
-	/**
-	 * Sets the color of one pixel
-	 * 
-	 * @param x position of pixel
-	 * @param y position of pixel
-	 * @param r red value [0,255]
-	 * @param g green value [0,255]
-	 * @param b blue value [0,255]
-	 */
-	private static void set(int x, int y, int r, int g, int b) {
-		data.setElem(x + y * WIDTH, r << 16 | g << 8 | b);
 	}
 
 }

@@ -11,7 +11,10 @@ import java.util.Scanner;
  */
 public class TriMesh {
 
+	// list of all triangles
 	public ArrayList<Triangle> tris = new ArrayList<Triangle>();
+
+	// limits of bounding box
 	private double xMin = Double.MAX_VALUE;
 	private double yMin = Double.MAX_VALUE;
 	private double zMin = Double.MAX_VALUE;
@@ -20,8 +23,8 @@ public class TriMesh {
 	private double zMax = -Double.MAX_VALUE;
 
 	/**
-	 * Construct mesh from .obj file format. Object must be triangulated and in a
-	 * right-hand coordinate system.
+	 * Default constructor. Construct mesh exactly from .obj file. Object must be
+	 * triangulated and in a right-hand coordinate system.
 	 * 
 	 * @param fileName obj file to read
 	 */
@@ -29,9 +32,7 @@ public class TriMesh {
 
 		// data to generate tris and bouding box
 		ArrayList<Vector3> verts = new ArrayList<Vector3>();
-		double x = 0;
-		double y = 0;
-		double z = 0;
+		double x = 0, y = 0, z = 0; // store a single vertex
 
 		// read data from file
 		try {
@@ -39,9 +40,10 @@ public class TriMesh {
 			// set up file scanner
 			Scanner scnr = new Scanner(new File(fileName));
 			String[] line;
-			String[] pA = new String[1];
-			String[] pB = new String[1];
-			String[] pC = new String[1];
+			// x y z parts of data
+			String[] pX = new String[1];
+			String[] pY = new String[1];
+			String[] pZ = new String[1];
 
 			// for each line
 			while (scnr.hasNextLine()) {
@@ -80,13 +82,13 @@ public class TriMesh {
 				else if (line[0].equals("f")) {
 
 					// get vertex info only
-					pA = line[1].split("/");
-					pB = line[2].split("/");
-					pC = line[3].split("/");
+					pX = line[1].split("/");
+					pY = line[2].split("/");
+					pZ = line[3].split("/");
 
 					// add triangle from vertices
-					tris.add(new Triangle(verts.get(Integer.valueOf(pA[0]) - 1), verts.get(Integer.valueOf(pB[0]) - 1),
-							verts.get(Integer.valueOf(pC[0]) - 1)));
+					tris.add(new Triangle(verts.get(Integer.valueOf(pX[0]) - 1), verts.get(Integer.valueOf(pY[0]) - 1),
+							verts.get(Integer.valueOf(pZ[0]) - 1)));
 				}
 			}
 
@@ -116,22 +118,22 @@ public class TriMesh {
 		double tymax = (yMax - o.getY()) / d.getY();
 		double tzmin = (zMin - o.getZ()) / d.getZ();
 		double tzmax = (zMax - o.getZ()) / d.getZ();
-		
+
 		double tmin = Math.max(Math.max(Math.min(txmin, txmax), Math.min(tymin, tymax)), Math.min(tzmin, tzmax));
 		double tmax = Math.min(Math.min(Math.max(txmin, txmax), Math.max(tymin, tymax)), Math.max(tzmin, tzmax));
 
 		if ((tmax < 0) || (tmin > tmax)) {
 			return false;
 		}
-		
-		// check intersection with triangles
+
+		// intersection data to return
 		double dist = Double.MAX_VALUE;
-		Vector3 hitRet = new Vector3(0,0,0);
-		Vector3 tuvRet = new Vector3(0,0,0);
-		Vector3 nRet = new Vector3(0,0,0);
+		Vector3 hitRet = new Vector3(0, 0, 0);
+		Vector3 tuvRet = new Vector3(0, 0, 0);
+		Vector3 nRet = new Vector3(0, 0, 0);
 		boolean noHit = true;
 
-		// loop thru all tris
+		// check intersection with triangles
 		for (int i = 0; i < tris.size(); i++) {
 			if (tris.get(i).MTint(o, d, hit, tuv)) {
 				// there is an intersection
