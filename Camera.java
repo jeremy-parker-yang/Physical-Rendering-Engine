@@ -18,8 +18,8 @@ public class Camera {
 	final static double FOV = 0.69;
 
 	// camera position
-	static Vector3 camLoc = new Vector3(0, 0, 10);
-	// TODO static Vector3 camRot = new Vector3();
+	final static Vector3 camLoc = new Vector3(0, 0, 10);
+	final static Vector3 camRot = new Vector3(0, 0, 0);
 
 	// scene info
 	private static ArrayList<TriMesh> scene = new ArrayList<TriMesh>();
@@ -29,7 +29,10 @@ public class Camera {
 	 */
 	public static void main(String[] args) {
 		// load meshes
-		TriMesh ico = new TriMesh("face.obj", new Vector3(2, 1, 1), new Vector3(1.57, 0, .5), new Vector3(0, 2.5, 0));
+		Vector3 scale = new Vector3(2, 1, 1);
+		Vector3 rot = new Vector3(1.57, 0, .5);
+		Vector3 trans = new Vector3(0, 2.5, 0);
+		TriMesh ico = new TriMesh("face.obj");// , scale, rot, trans);
 		scene.add(ico);
 
 		// render
@@ -42,6 +45,9 @@ public class Camera {
 	public static void render() {
 		// start image display
 		imageSetup();
+
+		// generate camera rotation matrix
+		double[][] camRotMat = Vector3.getRotMat(camRot);
 
 		// calculate value for each pixel
 		double step = 2 * Math.tan(FOV) / WIDTH;
@@ -56,7 +62,7 @@ public class Camera {
 			for (int i = 0; i < WIDTH; i++) {
 
 				// direction of ray for pixel ij
-				camRay = new Vector3(step * (i - (WIDTH / 2)), step * ((HEIGHT / 2) - j), -1).norm();
+				camRay = new Vector3(step * (i - (WIDTH / 2)), step * ((HEIGHT / 2) - j), -1).mul(camRotMat).norm();
 
 				// color test
 				if (step * (i - (WIDTH / 2)) > 0) {
