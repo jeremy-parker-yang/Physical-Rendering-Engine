@@ -9,7 +9,6 @@ import javax.swing.*;
  * 
  * @author Jeremy Parker Yang
  * @author Joshua Hopwood
- *
  */
 public class Camera {
 
@@ -19,7 +18,7 @@ public class Camera {
 	final static double FOV = 0.69;
 
 	// camera position
-	static Vector3 camLoc = new Vector3(0, 0, 5);
+	static Vector3 camLoc = new Vector3(0, 0, 10);
 	// TODO static Vector3 camRot = new Vector3();
 
 	// scene info
@@ -30,7 +29,7 @@ public class Camera {
 	 */
 	public static void main(String[] args) {
 		// load meshes
-		TriMesh ico = new TriMesh("icosahedron.obj");
+		TriMesh ico = new TriMesh("face.obj", new Vector3(2, 1, 1), new Vector3(1.57, 0, .5), new Vector3(0, 2.5, 0));
 		scene.add(ico);
 
 		// render
@@ -41,7 +40,6 @@ public class Camera {
 	 * Calculate color for each pixel
 	 */
 	public static void render() {
-
 		// start image display
 		imageSetup();
 
@@ -57,6 +55,7 @@ public class Camera {
 		for (int j = 0; j < HEIGHT; j++) {
 			for (int i = 0; i < WIDTH; i++) {
 
+				// direction of ray for pixel ij
 				camRay = new Vector3(step * (i - (WIDTH / 2)), step * ((HEIGHT / 2) - j), -1).norm();
 
 				// color test
@@ -86,9 +85,8 @@ public class Camera {
 						set(i, j, color, color, color);
 					}
 				}
-
-				panel.repaint();
 			}
+			panel.repaint(); // update image
 		}
 
 	}

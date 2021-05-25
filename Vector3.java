@@ -33,14 +33,14 @@ public class Vector3 {
 	public double getX() {
 		return this.x;
 	}
-	
+
 	/**
 	 * Gets y component
 	 */
 	public double getY() {
 		return this.y;
 	}
-	
+
 	/**
 	 * Gets z component
 	 */
@@ -63,10 +63,25 @@ public class Vector3 {
 	}
 
 	/**
-	 * Vector scaling
+	 * Vector scaling by constant
 	 */
 	Vector3 mul(double a) {
 		return new Vector3(a * this.x, a * this.y, a * this.z);
+	}
+
+	/**
+	 * Vector scaling by vector
+	 */
+	Vector3 mul(Vector3 a) {
+		return new Vector3(a.x * this.x, a.y * this.y, a.z * this.z);
+	}
+
+	/**
+	 * Left multiplies a vector by a 3x3 transformation matrix
+	 */
+	Vector3 mul(double[][] mat) {
+		return new Vector3(mat[0][0] * x + mat[0][1] * y + mat[0][2] * z, mat[1][0] * x + mat[1][1] * y + mat[1][2] * z,
+				mat[2][0] * x + mat[2][1] * y + mat[2][2] * z);
 	}
 
 	/**
@@ -88,5 +103,44 @@ public class Vector3 {
 	 */
 	Vector3 norm() {
 		return this.mul(1d / Math.sqrt(this.dot(this)));
+	}
+
+	/**
+	 * Generates a rotation matrix to rotate a single point. Uses Euler ZYX format.
+	 * 
+	 * @param rot x component is gamma, y is beta, z is alpha.
+	 * @return rotation matrix
+	 */
+	public static double[][] getRotMat(Vector3 rot) {
+		
+		// calculate cosines of rot vector
+		double cA = Math.cos(rot.getZ());
+		double cB = Math.cos(rot.getY());
+		double cY = Math.cos(rot.getX());
+
+		// calculate sines of rot vector
+		double sA = Math.sin(rot.getZ());
+		double sB = Math.sin(rot.getY());
+		double sY = Math.sin(rot.getX());
+
+		// rotation matrix
+		double[][] rotMat = new double[3][3];
+
+		// vector 0
+		rotMat[0][0] = cA * cB;
+		rotMat[1][0] = sA * cB;
+		rotMat[2][0] = -sB;
+
+		// vector 1
+		rotMat[0][1] = (cA * sB * sY) - (sA * cY);
+		rotMat[1][1] = (sA * sB * sY) + (cA * cY);
+		rotMat[2][1] = cB * sY;
+
+		// vector 2
+		rotMat[0][2] = (cA * sB * cY) + (sA * sY);
+		rotMat[1][2] = (sA * sB * cY) - (cA * sY);
+		rotMat[2][2] = cB * cY;
+
+		return rotMat;
 	}
 }

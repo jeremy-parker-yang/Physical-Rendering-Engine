@@ -6,9 +6,9 @@
  *
  */
 public class Triangle {
-	Vector3 a; // point a
-	Vector3 e1; // edge 1
-	Vector3 e2; // edge 1
+	public Vector3 a; // point a
+	public Vector3 e1; // edge 1
+	public Vector3 e2; // edge 1
 
 	// TODO: local coords
 	Vector3 n; // normal
