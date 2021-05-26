@@ -29,10 +29,12 @@ public class Camera {
 	 */
 	public static void main(String[] args) {
 		// load meshes
-		Vector3 scale = new Vector3(2, 1, 1);
-		Vector3 rot = new Vector3(1.57, 0, .5);
-		Vector3 trans = new Vector3(0, 2.5, 0);
-		TriMesh ico = new TriMesh("face.obj");// , scale, rot, trans);
+		Vector3 scale = new Vector3(7, 1, 1);
+		Vector3 rot = new Vector3(0, 0, 0);
+		Vector3 trans = new Vector3(0, 0, 0);
+		TriMesh ico = new TriMesh("icosahedron.obj", scale, rot, trans);
+		TriMesh face = new TriMesh("face.obj");
+		scene.add(face);
 		scene.add(ico);
 
 		// render
@@ -84,17 +86,14 @@ public class Camera {
 				}
 
 				// check intersection
-				for (int k = 0; k < scene.size(); k++) {
-					if (scene.get(k).intersect(camLoc, camRay, hit, tuv, n)) {
-						color = (int) Math.round(camRay.mul(-1).dot(n) * 255);
-						// System.out.println(color);
-						set(i, j, color, color, color);
-					}
+				if (collision(camLoc, camRay, hit, tuv, n)) {
+					color = (int) Math.round(camRay.mul(1).dot(n) * -255);
+					// System.out.println(color);
+					set(i, j, color, color, color);
 				}
 			}
 			panel.repaint(); // update image
 		}
-
 	}
 
 	// data to display image
@@ -102,6 +101,39 @@ public class Camera {
 	private static BufferedImage image;
 	private static DataBuffer data;
 	private static JPanel panel;
+
+	/**
+	 * Check all objects in scene for closest intersection. Return info about
+	 * collision.
+	 * 
+	 * @param o   origin of ray
+	 * @param d   direction of ray
+	 * @param hit collision coords
+	 * @param tuv barycentric coords
+	 * @param n   normal
+	 * @return false if no intersection
+	 */
+	private static boolean collision(Vector3 o, Vector3 d, Vector3 hit, Vector3 tuv, Vector3 n) {
+		// store intersection info of current triangle
+		double dist = Double.MAX_VALUE;
+		Vector3 hitC = new Vector3(0, 0, 0);
+		Vector3 tuvC = new Vector3(0, 0, 0);
+		Vector3 nC = new Vector3(0, 0, 0);
+
+		// check all objects in scene
+		for (int i = 0; i < scene.size(); i++) {
+			// if there is a closer collision
+			if (scene.get(i).meshInt(o, d, hitC, tuvC, nC) && tuvC.getX() < dist) {
+				// update intersection info
+				dist = tuvC.getX();
+				hit.set(hitC);
+				n.set(nC);
+				tuv.set(tuvC);
+			}
+		}
+
+		return dist < Double.MAX_VALUE;
+	}
 
 	/**
 	 * Sets the color of one pixel

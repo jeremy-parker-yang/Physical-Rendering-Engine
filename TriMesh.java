@@ -188,7 +188,7 @@ public class TriMesh {
 	 * @param d direction of ray
 	 * @return true if there is a collision
 	 */
-	public boolean intersect(Vector3 o, Vector3 d, Vector3 hit, Vector3 tuv, Vector3 n) {
+	public boolean meshInt(Vector3 o, Vector3 d, Vector3 hit, Vector3 tuv, Vector3 n) {
 
 		// check intersection with bounding box
 		double txmin = (xMin - o.getX()) / d.getX();
