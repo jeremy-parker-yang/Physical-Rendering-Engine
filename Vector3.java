@@ -10,7 +10,7 @@ public class Vector3 {
 	private double z;
 
 	/**
-	 * Construct vector
+	 * Construct vector from components
 	 */
 	public Vector3(double x, double y, double z) {
 		this.x = x;
@@ -19,7 +19,7 @@ public class Vector3 {
 	}
 
 	/**
-	 * Set as a copy of vector a
+	 * Construct vector from vector
 	 */
 	public void set(Vector3 a) {
 		this.x = a.x;
@@ -80,7 +80,8 @@ public class Vector3 {
 	 * Left multiplies a vector by a 3x3 transformation matrix
 	 */
 	Vector3 mul(double[][] mat) {
-		return new Vector3(mat[0][0] * x + mat[0][1] * y + mat[0][2] * z, mat[1][0] * x + mat[1][1] * y + mat[1][2] * z,
+		return new Vector3(mat[0][0] * x + mat[0][1] * y + mat[0][2] * z,
+				mat[1][0] * x + mat[1][1] * y + mat[1][2] * z,
 				mat[2][0] * x + mat[2][1] * y + mat[2][2] * z);
 	}
 
@@ -95,7 +96,8 @@ public class Vector3 {
 	 * Cross Product
 	 */
 	Vector3 cross(Vector3 a) {
-		return new Vector3(this.y * a.z - this.z * a.y, this.z * a.x - this.x * a.z, this.x * a.y - this.y * a.x);
+		return new Vector3(this.y * a.z - this.z * a.y,
+				this.z * a.x - this.x * a.z, this.x * a.y - this.y * a.x);
 	}
 
 	/**
@@ -106,7 +108,7 @@ public class Vector3 {
 	}
 
 	/**
-	 * Generates a rotation matrix to rotate a single point. Uses Euler ZYX format.
+	 * Generates a rotation matrix using Euler ZYX format.
 	 * 
 	 * @param rot x component is gamma, y is beta, z is alpha.
 	 * @return rotation matrix

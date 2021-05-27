@@ -6,14 +6,16 @@
  *
  */
 public class Triangle {
-	public Vector3 a; // point a
-	public Vector3 e1; // edge 1
-	public Vector3 e2; // edge 1
+	
+	// world coords
+	private Vector3 a; // point a
+	private Vector3 e1; // edge 1
+	private Vector3 e2; // edge 1
 
-	// TODO: local coords
-	Vector3 n; // normal
-	// Vector3 t1; // tangent 1
-	// Vector3 t2; // tangent 2
+	// local coords
+	public Vector3 n; // normal
+	public Vector3 t1; // tangent 1
+	public Vector3 t2; // tangent 2
 
 	/**
 	 * Construct triangle from 3 vertices
@@ -30,8 +32,8 @@ public class Triangle {
 
 		// defines local coord system
 		n = e1.cross(e2).norm();
-		// t1
-		// t2
+		t1 = e1.norm();
+		t2 = n.cross(t1).norm();
 	}
 
 	/**
