@@ -6,7 +6,7 @@
  *
  */
 public class Triangle {
-	
+
 	// world coords
 	private Vector3 a; // point a
 	private Vector3 e1; // edge 1
@@ -71,6 +71,11 @@ public class Triangle {
 		// get point of intersection
 		tuv.set(new Vector3(k * q.dot(e2), u, v));
 		hit.set(o.add(d.mul(tuv.getX())));
+
+		// prevent self intersections
+		if (tuv.getX() < 0.000001) {
+			return false;
+		}
 
 		return true;
 	}

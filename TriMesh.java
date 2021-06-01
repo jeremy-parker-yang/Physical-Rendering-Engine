@@ -29,6 +29,7 @@ public class TriMesh {
 	 * @param fileName .obj file to read
 	 */
 	public TriMesh(String fileName) {
+		
 		// store verts to generate tris
 		ArrayList<Vector3> verts = new ArrayList<Vector3>();
 		double x = 0, y = 0, z = 0; // store a single vertex
@@ -210,18 +211,16 @@ public class TriMesh {
 		double dist = Double.MAX_VALUE;
 		Vector3 hitRet = new Vector3(0, 0, 0);
 		Vector3 tuvRet = new Vector3(0, 0, 0);
-
-		// check intersection with triangles
 		int ihit = 0; // triangle that intersects
+		
+		// check intersection with triangles
 		for (int i = 0; i < tris.size(); i++) {
 			// there is an intersection
-			if (tris.get(i).MTint(o, d, hit, tuv)) {
+			if (tris.get(i).MTint(o, d, hitRet, tuvRet)) {
 				// find closest triangle
 				if (tuv.getX() < dist) {
 					// save collsion specific info
-					dist = tuv.getX();
-					hitRet.set(hit);
-					tuvRet.set(tuv);
+					dist = tuvRet.getX();
 					ihit = i;
 				}
 			}
@@ -254,10 +253,21 @@ public class TriMesh {
 		String[] pY = new String[1];
 		String[] pZ = new String[1];
 
-		do {
-			// add triangle
+		// add first triangle
+		pX = line[1].split("/");
+		pY = line[2].split("/");
+		pZ = line[3].split("/");
+		tris.add(new Triangle(verts.get(Integer.valueOf(pX[0]) - 1),
+				verts.get(Integer.valueOf(pY[0]) - 1),
+				verts.get(Integer.valueOf(pZ[0]) - 1)));
+
+		// for other triangles
+		while (scnr.hasNextLine()) {
+			// check triangle
 			if (line[0].equals("f")) {
 
+				line = scnr.nextLine().split(" ");
+				
 				// get vertex info only
 				pX = line[1].split("/");
 				pY = line[2].split("/");
@@ -267,10 +277,7 @@ public class TriMesh {
 				tris.add(new Triangle(verts.get(Integer.valueOf(pX[0]) - 1),
 						verts.get(Integer.valueOf(pY[0]) - 1),
 						verts.get(Integer.valueOf(pZ[0]) - 1)));
-
-				line = scnr.nextLine().split(" ");
 			}
-
-		} while (scnr.hasNextLine());
+		}
 	}
 }
