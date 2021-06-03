@@ -1,11 +1,16 @@
-
+/**
+ * Shader to define physical properties of a material.
+ * 
+ * @author Jeremy Parker Yang
+ *
+ */
 public class Material {
 
 //	private final double roughness;
 //	private final double reflectance;
-//	private final double colorR;
-//	private final double colorG;
-//	private final double colorB;
+//	private final int colorR;
+//	private final int colorG;
+//	private final int colorB;
 
 	public Material() {
 
