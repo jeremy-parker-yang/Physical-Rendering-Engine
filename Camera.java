@@ -7,15 +7,17 @@ import java.util.ArrayList;
  */
 public class Camera {
 
-	// image quality
-	final static int WIDTH = 640;
-	final static int HEIGHT = 480;
-	final static int samples = 50;
-	final static int numBounces = 3;
+	// image quality parameters
+	final static int WIDTH = 640; // number of pixels across x axis
+	final static int HEIGHT = 480; // number of pixels across y axis
+	final static int AA_SAMPLES = 10; // anti-aliasing samples
+	final static int SAMPLES = 32; // max number of scattered rays
+	final static int MAX_BOUNCES = 3; // max number of GI bounces
+	final static double GI_SCALE = 0.4; // GI intensity falloff
 
 	// camera info
-	final static Vector3 camLoc = new Vector3(10, 7.5, 10).mul(0.3);
-	final static Vector3 camRot = new Vector3(-0.5, 0.785, 0);
+	final static Vector3 CAM_LOC = new Vector3(10, 7.5, 10).mul(0.3);
+	final static Vector3 CAM_ROT = new Vector3(-0.5, 0.785, 0);
 	final static double FOV = 0.69;
 	static ArrayList<TriMesh> scene = new ArrayList<TriMesh>();
 
@@ -23,7 +25,7 @@ public class Camera {
 	private static Display display = new Display(WIDTH, HEIGHT);
 
 	/**
-	 * Load meshes, generate final image
+	 * Load meshes, generate image
 	 */
 	public static void main(String[] args) {
 		// load meshes
@@ -44,14 +46,12 @@ public class Camera {
 	 * Generate high quality image from light-mesh collisions
 	 */
 	public static void render() {
-		// generate camera rotation matrix
-		double[][] camRotMat = Vector3.getRotMat(camRot);
-
-		// calculate value for each pixel
+		// data to send rays from camera
+		double[][] camRotMat = Vector3.getRotMat(CAM_ROT);
 		double step = 2 * Math.tan(FOV) / WIDTH;
 		Vector3 camRay;
 
-		// primary hit info
+		// primary collision info
 		Vector3 hit = new Vector3(0, 0, 0);
 		Vector3 tuv = new Vector3(0, 0, 0);
 		Vector3 n = new Vector3(0, 0, 0);
@@ -63,119 +63,136 @@ public class Camera {
 		double totalColor = 0;
 
 		// loop through pixels
-		for (int j = 0; j < HEIGHT; j++) {
-			for (int i = 0; i < WIDTH; i++) {
+		for (int i = 0; i < HEIGHT; i++) {
+			for (int j = 0; j < WIDTH; j++) {
 
-				// direction of ray for pixel ij
-				camRay = new Vector3(step * (i - (WIDTH / 2)),
-						step * ((HEIGHT / 2) - j), -1).mul(camRotMat).norm();
+				// loop through anti-aliasing samples
+				Vector3 pixelColor = new Vector3(0, 0, 0);
+				for (int ip = 0; ip < AA_SAMPLES; ip++) {
+					for (int jp = 0; jp < AA_SAMPLES; jp++) {
 
-				// if camRay intersects with a mesh
-				if (collision(camLoc, camRay, hit, tuv, n, t1, t2)) {
+						// direction of ray for pixel ij
+						// for anti-aliasing, subsample with ip,jp
+						camRay = new Vector3(
+								// iterate horizontally
+								step * (j - (WIDTH / 2))
+										+ (step / (2 * AA_SAMPLES))
+												* (2 * jp - (AA_SAMPLES - 1)),
+								// iterate vertically
+								step * ((HEIGHT / 2) - i)
+										+ (step / (2 * AA_SAMPLES))
+												* (2 * ip - (AA_SAMPLES - 1)),
+								-1).mul(camRotMat).norm();
 
-					// scatter light from point of collision
-					totalColor = totalLight(hit, tuv, n, t1, t2, numBounces);
+						// if camRay intersects with any mesh
+						if (collision(CAM_LOC, camRay, hit, tuv, n, t1, t2)) {
 
-					// paint to screen
-					color = (int) (255 * totalColor);
-					if (color > 255 || color < 0) {
-						color = Math.max(0, color);
-						color = Math.min(255, color);
+							// scatter light from point of collision
+							totalColor = luminance(hit, tuv, n, t1, t2,
+									MAX_BOUNCES, SAMPLES);
+
+							// paint to screen
+							color = (int) (255 * totalColor);
+							if (color > 255 || color < 0) {
+								color = Math.max(0, color);
+								color = Math.min(255, color);
+							}
+							pixelColor = pixelColor
+									.add(new Vector3(color, color, color));
+						}
+
+						// if no collision, display sky
+						else {
+							pixelColor = pixelColor
+									.add(new Vector3(201, 226, 255));
+						}
 					}
-					display.set(i, j, color, color, color);
 				}
 
-				// if no collision, display sky
-				else {
-					display.set(i, j, 201, 226, 255);
-				}
+				// pixel color is avg of each sub-sample
+				pixelColor = pixelColor.mul(1d / (AA_SAMPLES * AA_SAMPLES));
+				display.set(j, i, (int) pixelColor.getX(),
+						(int) pixelColor.getY(), (int) pixelColor.getZ());
 			}
 			display.repaint(); // update image
 		}
 	}
 
 	/**
-	 * Sum all contributions of light that illuminate this point (called hit).
-	 * This is a recursive algorithm that includes light contribution from
-	 * surfaces and lights. Contributions from surfaces decrease with distance.
+	 * Sum of all contributions of light that collide with point hit and scatter
+	 * in the direction of the camera or an intermediate surface. This is a
+	 * recursive algorithm with a maximum ray depth of numBounces. After each
+	 * collision with a surface, the number of scattered rays is cut in half.
 	 * 
-	 * @param hit        the point on a mesh to sum light at
-	 * @param tuv        the point hit in barycentric coordinates
+	 * @param hit        the point on a surface in cartesian coordinates
+	 * @param tuv        the point in barycentric coordinates
 	 * @param n          the normal of the surface at point hit
-	 * @param t1         a tangent of the surface at point hit
-	 * @param t2         a tangent of the surface at point hit
+	 * @param t1         tangent 1 of the surface at point hit
+	 * @param t2         tangent 2 of the surface at point hit
 	 * @param numBounces the maximum number of remaining bounces
-	 * @return the contribution of light from all sources at point hit
+	 * @return luminance at point hit in direction of camera or surface
 	 */
-	public static double totalLight(Vector3 hit, Vector3 tuv, Vector3 n,
-			Vector3 t1, Vector3 t2, int numBounces) {
+	public static double luminance(Vector3 hit, Vector3 tuv, Vector3 n,
+			Vector3 t1, Vector3 t2, int numBounces, int samples) {
 
 		// reached end of recursive limit
 		if (numBounces < 1) {
 			return 0;
 		}
 
-		// add up light from each sample
+		// data to add up light from each sample
 		Vector3 scatter = new Vector3(0, 0, 0);
-		double totalColor = 0;
+		double totalLuminance = 0;
 
 		// info for secondary light bounces
-		// s is a point found by scattering and colliding light from hit
+		// point s is found by scattering and colliding rays from hit
 		Vector3 hitS = new Vector3(0, 0, 0);
 		Vector3 tuvS = new Vector3(0, 0, 0);
 		Vector3 nS = new Vector3(0, 0, 0);
 		Vector3 t1S = new Vector3(0, 0, 0);
 		Vector3 t2S = new Vector3(0, 0, 0);
-		double contribitionS = 0; // contribution at s
-		double distSquared = 0; // distance from hit to s
+		double luminanceS = 0; // luminance at s in direction of hit
 
 		// scatter light mutliple times and sum contribution at hit
 		for (int k = 0; k < samples; k++) {
 
 			// scatter light in new direction
 			scatter = Material.scatter(n, t1, t2);
-			contribitionS = 0;
+			luminanceS = 0;
 
 			// if hits mesh, add contribution from mesh
 			if (collision(hit, scatter, hitS, tuvS, nS, t1S, t2S)) {
 
+				// get light contribution from direction s (scattered ray)
 				// contribution from scattered point follows inverse square law
-				// if statement ensures 1/x^2 only decreases light contribution
-				distSquared = tuv.getX() * tuv.getX();
-				if (distSquared < 50) {
-					contribitionS = totalLight(hitS, tuvS, nS, t1S, t2S,
-							numBounces - 1);
-				} else {
-					contribitionS = 50 * totalLight(hitS, tuvS, nS, t1S, t2S,
-							numBounces - 1) / (tuv.getX() * tuv.getX());
-				}
+				luminanceS = luminance(hitS, tuvS, nS, t1S, t2S, numBounces - 1,
+						samples / 2)
+						/ ((GI_SCALE * tuv.getX() + 1)
+								* (GI_SCALE * tuv.getX() + 1));
 
-				// additionally, consider the cross section change
-				// this is proportional normal * light direction
-				// scatterContribution = scatterContribution * n.dot(scatter);
-
-				// add scatterContribution to total light at the point
-				totalColor = totalColor + contribitionS;
+				// add luminance from the secondary mesh collision
+				totalLuminance = totalLuminance + luminanceS;
 			}
 
 			// ray hits light
 			else {
 				// contribution from light source
 				// some light absorbed - include mesh color here
-				totalColor = totalColor + SkyLight.getLight(scatter);
+				totalLuminance = totalLuminance + SkyLight.getLight(scatter);
 			}
 		}
-		
-		// return total contribution of light at point hit
-		return totalColor / samples;
+
+		// return luminance at point hit
+		totalLuminance = totalLuminance * 0.8; // TODO: adjust for color
+		return totalLuminance / samples;
 	}
 
 	/**
-	 * Quickly generate an image to test the scene
+	 * Generate a quick, low quality image to test the scene
 	 */
 	public static void view() {
 		// generate camera rotation matrix
-		double[][] camRotMat = Vector3.getRotMat(camRot);
+		double[][] camRotMat = Vector3.getRotMat(CAM_ROT);
 
 		// calculate value for each pixel
 		double step = 2 * Math.tan(FOV) / WIDTH;
@@ -190,21 +207,25 @@ public class Camera {
 		// loop through pixels
 		for (int j = 0; j < HEIGHT; j++) {
 			for (int i = 0; i < WIDTH; i++) {
-
+				
 				// direction of ray for pixel ij
-				camRay = new Vector3(step * (i - (WIDTH / 2)),
-						step * ((HEIGHT / 2) - j), -1).mul(camRotMat).norm();
+				camRay = new Vector3(
+						step * (i - (WIDTH / 2)),
+						step * ((HEIGHT / 2) - j),
+						-1).mul(camRotMat).norm();
 
 				// check intersection (any object in scene)
-				if (collision(camLoc, camRay, hit, tuv, n, t1, t2)) {
+				if (collision(CAM_LOC, camRay, hit, tuv, n, t1, t2)) {
 					color = (int) Math.round(camRay.dot(n) * -255);
 					display.set(i, j, color, color, color);
 				} else {
 					display.set(i, j, 201, 226, 255);
 				}
+				
 			}
 			display.repaint(); // update image
 		}
+		
 	}
 
 	/**

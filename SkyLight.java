@@ -21,10 +21,12 @@ public class SkyLight {
 	public static double getLight(Vector3 d) {
 
 		// this is an arbitrary function that could be changed later
-		Vector3 a = d.norm().sub(new Vector3(-0.2, .2, .7).norm());
-		if (a.dot(a) > .05) {
-			return .15;
+		//-0.2, .2, .7
+		//-0.7, .9, .75
+		Vector3 a = d.norm().sub(new Vector3(-0.2, .9, .7).norm()); //y = .2
+		if (a.dot(a) > .1) {
+			return .12;
 		}
-		return 15;
+		return 300; //15
 	}
 }

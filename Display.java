@@ -31,7 +31,7 @@ class Display {
 
 		this.width = width;
 
-		frame = new JFrame("path tracer");
+		frame = new JFrame("PBR Engine");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setUndecorated(false);
 		frame.setSize(width, height);
